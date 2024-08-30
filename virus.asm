@@ -37,7 +37,7 @@ new_int21:
      pop bp
      sub bp, 2
      mov word ax, [bp]
-     mov bp, ax
+     mov bp, ax             ; BP = file delta offset
 
 
 
