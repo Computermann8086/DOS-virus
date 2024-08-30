@@ -1,3 +1,7 @@
+;---------------
+; The shine DOS virus
+; Based on the Cybercide DOS virus
+
 org 0h
 
 
