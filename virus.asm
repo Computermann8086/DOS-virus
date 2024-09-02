@@ -82,5 +82,5 @@ infect:            ; DS:DX = ASCIIZ Filename pointer
         
 data_section:
      .save_bp dw 0
-     .file_infected db 'Weep'
+     .file_infected db 'Shine'
      .MZ_BUF dw 0
