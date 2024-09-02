@@ -14,7 +14,7 @@ start:
 
      mov ax, 9a8ah    ; Are we in memory yet?
      int 21h          ; Call to int 21h
-     cmp ax, 8b7b     ; Is AX 8b7b?
+     cmp ax, 8b7bh    ; Is AX 8b7b?
      je dont_install
 install:
      mov ax, 3521h    ; Get vector 21h
