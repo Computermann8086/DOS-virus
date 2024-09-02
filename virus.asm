@@ -1,6 +1,7 @@
 ;---------------
 ; The shine DOS virus
 ; Based on the Cybercide DOS virus
+; Here's the link: https://github.com/guitmz/virii/blob/master/c/CYBRCIDE.ASM, whew, that was a mouthfull 
 
 org 0h
 
